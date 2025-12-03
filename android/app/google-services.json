@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "249366528665",
+    "project_id": "tbproject-424ac",
+    "storage_bucket": "tbproject-424ac.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:249366528665:android:5e1c0075fc8f83eaf52e08",
+        "android_client_info": {
+          "package_name": "com.example.kasir_toko_bangunan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1HHNQp8kTpGN5T8sXQ5hyqGxyMMLH_rc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
