@@ -3,59 +3,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
 class LaporanPage extends StatefulWidget {
-  const LaporanPage({super.key});
+  final String title;
+  const LaporanPage({super.key, required this.title});
 
   @override
   State<LaporanPage> createState() => _LaporanPageState();
 }
 
 class _LaporanPageState extends State<LaporanPage> {
-  int totalPembelian = 0;
-  int totalPengeluaran = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    loadLaporan();
-  }
-
-  Future<void> loadLaporan() async {
-    final NumberFormat rupiah = NumberFormat("#,###", "id_ID");
-
-    try {
-      // 🔥 Ambil total pembelian dari koleksi "transaksi"
-      final pembelianSnapshot =
-          await FirebaseFirestore.instance.collection('transaksi').get();
-
-      int pembelian = 0;
-      for (var doc in pembelianSnapshot.docs) {
-        pembelian += (doc['total'] ?? 0) as int;
-      }
-
-      // 🔥 Ambil total pengeluaran dari koleksi "pengeluaran"
-      final pengeluaranSnapshot =
-          await FirebaseFirestore.instance.collection('pengeluaran').get();
-
-      int pengeluaran = 0;
-      for (var doc in pengeluaranSnapshot.docs) {
-        pengeluaran += (doc['jumlah'] ?? 0) as int;
-      }
-
-      setState(() {
-        totalPembelian = pembelian;
-        totalPengeluaran = pengeluaran;
-      });
-
-    } catch (e) {
-      print("Error laporan: $e");
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final NumberFormat rupiah = NumberFormat("#,###", "id_ID");
-
-    int uangTersisa = totalPembelian - totalPengeluaran; 
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F5F2),
@@ -69,22 +27,62 @@ class _LaporanPageState extends State<LaporanPage> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
 
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            laporanCard("Total Pembelian", rupiah.format(totalPembelian), Colors.green),
-            const SizedBox(height: 15),
-            laporanCard("Total Pengeluaran", rupiah.format(totalPengeluaran), Colors.red),
-            const SizedBox(height: 15),
-            laporanCard("Uang Tersisa", rupiah.format(uangTersisa), Colors.brown),
-          ],
-        ),
+      body: StreamBuilder(
+        // Hanya ambil transaksi kategori pembelian
+        stream: FirebaseFirestore.instance
+            .collection('transaksi')
+            .where('kategori', isEqualTo: 'pembelian')
+            .snapshots(),
+        builder: (context, transaksiSnapshot) {
+          return StreamBuilder(
+            stream: FirebaseFirestore.instance.collection('pengeluaran').snapshots(),
+            builder: (context, pengeluaranSnapshot) {
+              
+              if (!transaksiSnapshot.hasData || !pengeluaranSnapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              // ============================
+              // HITUNG TOTAL PEMBELIAN DARI HISTORY
+              // ============================
+              int totalPembelian = 0;
+
+              for (var doc in transaksiSnapshot.data!.docs) {
+                final List<dynamic> history = doc['history'] ?? [];
+
+                for (var item in history) {
+                  int harga = int.tryParse(item['harga'].toString()) ?? 0;
+                  int qty = int.tryParse(item['qty'].toString()) ?? 0;
+                  totalPembelian += harga * qty;
+                }
+              }
+
+              // ============================
+              // HITUNG TOTAL PENGELUARAN
+              // ============================
+              int totalPengeluaran = 0;
+              for (var doc in pengeluaranSnapshot.data!.docs) {
+                totalPengeluaran += int.tryParse(doc['jumlah'].toString()) ?? 0;
+              }
+
+              return Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    laporanCard("Total Pembelian", rupiah.format(totalPembelian), Colors.green),
+                    const SizedBox(height: 15),
+                    laporanCard("Total Pengeluaran", rupiah.format(totalPengeluaran), Colors.red),
+                  ],
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
 
-  // 🔶 Widget Card Laporan
+  // WIDGET CARD
   Widget laporanCard(String title, String value, Color color) {
     return Container(
       width: double.infinity,

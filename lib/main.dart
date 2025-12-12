@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:kasir_toko_bangunan/pages/splash.dart';
 import 'firebase_options.dart';
 import 'package:get/get.dart';
 import 'package:kasir_toko_bangunan/pages/loginPage.dart';
@@ -25,13 +26,14 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
 
       
-      initialRoute: '/login',
+      initialRoute: '/splash',
 
     
       getPages: [
+        GetPage(name: '/splash', page: () => SplashScreen()),
         GetPage(name: '/login', page: () => LoginPage()),
-        GetPage(name: '/register', page: () => const RegisterPage()),
-        GetPage(name: '/home', page: () => const Homepage()),
+        GetPage(name: '/register', page: () => RegisterPage()),
+        GetPage(name: '/home', page: () =>  HomePage()),
       ],
     );
   }

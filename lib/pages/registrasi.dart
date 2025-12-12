@@ -1,31 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get/get.dart';
+import 'package:kasir_toko_bangunan/pages/controller/registerController.dart';
 
-class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+class RegisterPage extends StatelessWidget {
+  RegisterPage({super.key});
 
-  @override
-  State<RegisterPage> createState() => _RegisterPageState();
-}
+  final controller = Get.put(RegisterController());
 
-class _RegisterPageState extends State<RegisterPage> {
-  bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
-  bool _isLoading = false;
-
-  final _formKey = GlobalKey<FormState>();
-
-  final TextEditingController _namaController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
-
-  final Color primaryColor = const Color(0xFF009688);
-  final Color accentColor = const Color(0xFF424242);
-  final Color cardColor = Colors.white;
-  final Color backgroundColor = Colors.grey.shade100;
+  final Color primaryColor = const Color(0xFF8B4513);
+  final Color accentColor = const Color(0xFF5D4037);
+  final Color backgroundColor = const Color(0xFFF5EDE1);
+  final Color cardColor = const Color(0xFFFFF8F0);
 
   @override
   Widget build(BuildContext context) {
@@ -35,10 +20,10 @@ class _RegisterPageState extends State<RegisterPage> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Image.asset('images/logo1.png', width: 120, height: 120),
               const SizedBox(height: 20),
+
               Text(
                 "Buat Akun Baru",
                 style: TextStyle(
@@ -47,16 +32,19 @@ class _RegisterPageState extends State<RegisterPage> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+
               const SizedBox(height: 10),
+
               Card(
                 elevation: 10,
+                color: cardColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(30),
                   child: Form(
-                    key: _formKey,
+                    key: controller.formKey,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -68,50 +56,113 @@ class _RegisterPageState extends State<RegisterPage> {
                             color: accentColor,
                           ),
                         ),
+
                         const SizedBox(height: 30),
-                        _buildTextField(
-                          controller: _namaController,
-                          label: "Nama Lengkap",
-                          icon: Icons.person_outline,
-                          validatorMsg: "Nama tidak boleh kosong",
-                        ),
-                        const SizedBox(height: 20),
-                        _buildTextField(
-                          controller: _emailController,
-                          label: "Email",
-                          icon: Icons.email_outlined,
-                          validatorMsg: "Email tidak boleh kosong",
-                        ),
-                        const SizedBox(height: 20),
-                        _buildPasswordField(),
-                        const SizedBox(height: 20),
-                        _buildConfirmPasswordField(),
-                        const SizedBox(height: 30),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 55,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _registerUser,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: _isLoading
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white,
-                                  )
-                                : const Text(
-                                    'DAFTAR',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+
+                        // NAMA
+                        TextFormField(
+                          controller: controller.namaC,
+                          decoration: _inputDecoration(
+                            label: "Nama Lengkap",
+                            icon: Icons.person_outline,
                           ),
+                          validator: (v) =>
+                              v!.isEmpty ? "Nama tidak boleh kosong" : null,
                         ),
+
+                        const SizedBox(height: 20),
+
+                        // EMAIL
+                        TextFormField(
+                          controller: controller.emailC,
+                          decoration: _inputDecoration(
+                            label: "Email",
+                            icon: Icons.email_outlined,
+                          ),
+                          validator: (v) =>
+                              v!.isEmpty ? "Email tidak boleh kosong" : null,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // PASSWORD
+                        Obx(() => TextFormField(
+                              controller: controller.passC,
+                              obscureText: !controller.showPass.value,
+                              decoration: _inputDecoration(
+                                label: "Password",
+                                icon: Icons.lock_outline,
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    controller.showPass.value
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                    color: Colors.brown.shade400,
+                                  ),
+                                  onPressed: () =>
+                                      controller.showPass.toggle(),
+                                ),
+                              ),
+                              validator: (v) => v!.length < 6
+                                  ? "Password minimal 6 karakter"
+                                  : null,
+                            )),
+
+                        const SizedBox(height: 20),
+
+                        // KONFIRMASI PASSWORD
+                        Obx(() => TextFormField(
+                              controller: controller.confirmPassC,
+                              obscureText: !controller.showConfirmPass.value,
+                              decoration: _inputDecoration(
+                                label: "Konfirmasi Password",
+                                icon: Icons.lock_person_outlined,
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    controller.showConfirmPass.value
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                    color: Colors.brown.shade400,
+                                  ),
+                                  onPressed: () =>
+                                      controller.showConfirmPass.toggle(),
+                                ),
+                              ),
+                              validator: (v) => v != controller.passC.text
+                                  ? "Password tidak cocok"
+                                  : null,
+                            )),
+
+                        const SizedBox(height: 30),
+
+                        // BUTTON REGISTER
+                        Obx(() => SizedBox(
+                              width: double.infinity,
+                              height: 55,
+                              child: ElevatedButton(
+                                onPressed: controller.isLoading.value
+                                    ? null
+                                    : controller.registerUser,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryColor,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: controller.isLoading.value
+                                    ? const CircularProgressIndicator(
+                                        color: Colors.white,
+                                      )
+                                    : const Text(
+                                        'DAFTAR',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                              ),
+                            )),
                       ],
                     ),
                   ),
@@ -124,110 +175,7 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  TextFormField _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    required String validatorMsg,
-  }) {
-    return TextFormField(
-      controller: controller,
-      decoration: _inputDecoration(label: label, icon: icon),
-      validator: (value) => value!.isEmpty ? validatorMsg : null,
-    );
-  }
-
-  TextFormField _buildPasswordField() {
-    return TextFormField(
-      controller: _passwordController,
-      obscureText: !_isPasswordVisible,
-      decoration: _inputDecoration(
-        label: "Password",
-        icon: Icons.lock_outline,
-        suffixIcon: IconButton(
-          icon: Icon(
-            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-            color: Colors.grey.shade600,
-          ),
-          onPressed: () => setState(() {
-            _isPasswordVisible = !_isPasswordVisible;
-          }),
-        ),
-      ),
-      validator: (value) =>
-          value!.length < 6 ? "Password minimal 6 karakter" : null,
-    );
-  }
-
-  TextFormField _buildConfirmPasswordField() {
-    return TextFormField(
-      controller: _confirmPasswordController,
-      obscureText: !_isConfirmPasswordVisible,
-      decoration: _inputDecoration(
-        label: "Konfirmasi Password",
-        icon: Icons.lock_person_outlined,
-        suffixIcon: IconButton(
-          icon: Icon(
-            _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
-            color: Colors.grey.shade600,
-          ),
-          onPressed: () => setState(() {
-            _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-          }),
-        ),
-      ),
-      validator: (value) =>
-          value != _passwordController.text ? "Password tidak cocok" : null,
-    );
-  }
-
-  Future<void> _registerUser() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      // 🔹 Registrasi ke Firebase Auth
-      UserCredential userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-
-      // 🔹 Simpan data ke Firestore
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userCredential.user!.uid)
-          .set({
-        'nama': _namaController.text.trim(),
-        'email': _emailController.text.trim(),
-        'createdAt': DateTime.now(),
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text("Registrasi berhasil ✅ Silakan login kembali")),
-        );
-        Navigator.pop(context);
-      }
-    } on FirebaseAuthException catch (e) {
-      String message = "Terjadi kesalahan";
-      if (e.code == 'email-already-in-use') {
-        message = "Email sudah terdaftar";
-      } else if (e.code == 'invalid-email') {
-        message = "Format email tidak valid";
-      } else if (e.code == 'weak-password') {
-        message = "Password terlalu lemah";
-      }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(message),
-      ));
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
+  // Input Decoration
   InputDecoration _inputDecoration({
     required String label,
     required IconData icon,
@@ -235,19 +183,24 @@ class _RegisterPageState extends State<RegisterPage> {
   }) {
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(color: Colors.grey.shade600),
+      labelStyle: TextStyle(
+        color: accentColor,
+        fontWeight: FontWeight.w500,
+      ),
       prefixIcon: Icon(icon, color: primaryColor),
       suffixIcon: suffixIcon,
-      border: OutlineInputBorder(
+      filled: true,
+      fillColor: cardColor,
+      enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: Colors.brown.shade200),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: primaryColor, width: 2),
       ),
-      filled: true,
-      fillColor: cardColor,
+      contentPadding:
+          const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
     );
   }
 }
